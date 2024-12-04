@@ -1,6 +1,6 @@
-CREATE DATABASE bd_restaurante;
+CREATE DATABASE bd_restaurante2;
 
-USE bd_restaurante;
+USE bd_restaurante2;
 
 -- Tabla de usuarios para los camareros
 CREATE TABLE tbl_usuarios (
@@ -33,6 +33,29 @@ CREATE TABLE tbl_ocupaciones (
     fecha_inicio DATETIME DEFAULT CURRENT_TIMESTAMP,    -- Fecha y hora del inicio de la ocupación
     fecha_fin DATETIME                                  -- Fecha y hora del final de la ocupación
 );
+
+
+-- Crear tabla para reservas anticipadas
+CREATE TABLE tbl_reservas (
+    id_reserva INT PRIMARY KEY AUTO_INCREMENT,
+    id_usuario INT,
+    id_mesa INT,
+    fecha_reserva DATETIME DEFAULT CURRENT_TIMESTAMP,  -- Fecha y hora de la reserva
+    fecha_ocupacion DATETIME,                           -- Fecha y hora de la ocupación
+    estado ENUM('pendiente', 'confirmada', 'cancelada') DEFAULT 'pendiente',  -- Estado de la reserva
+    FOREIGN KEY (id_usuario) REFERENCES tbl_usuarios(id_usuario),
+    FOREIGN KEY (id_mesa) REFERENCES tbl_mesas(id_mesa)
+);
+
+-- Agregar campo de capacidad en la tabla de salas
+ALTER TABLE tbl_salas
+ADD capacidad INT;  -- Capacidad de la sala
+
+-- Agregar campo de estado en la tabla de mesas para indicar si está reservada
+ALTER TABLE tbl_mesas
+ADD estado_reserva ENUM('disponible', 'reservada') DEFAULT 'disponible';  -- Estado de reserva de la mesa
+
+-- ... código existente ...
 
 -- Definición de las FOREIGN KEYs
 ALTER TABLE tbl_mesas
