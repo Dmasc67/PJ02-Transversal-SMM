@@ -1,7 +1,7 @@
 <?php
 session_start();
 date_default_timezone_set('Europe/Madrid');
-require_once('./php/conexion.php');
+require_once('./php/conexion.php'); // Se incluye la conexión a la base de datos
 
 // Verificación de sesión iniciada
 if (!isset($_SESSION['usuario'])) {
@@ -15,21 +15,16 @@ try {
         throw new Exception("ID de sala no válido.");
     }
 
-    $query_nombre_sala = "SELECT nombre_sala FROM tbl_salas WHERE id_sala = ?";
-    $stmt_nombre_sala = mysqli_prepare($conexion, $query_nombre_sala);
+    // Obtener el nombre de la sala
+    $query_nombre_sala = "SELECT nombre_sala FROM tbl_salas WHERE id_sala = :id_sala";
+    $stmt_nombre_sala = $conexion->prepare($query_nombre_sala);
+    $stmt_nombre_sala->bindParam(':id_sala', $id_sala, PDO::PARAM_INT);
+    $stmt_nombre_sala->execute();
+    $nombre_sala = "Sala no encontrada"; // Valor predeterminado
 
-    if (!$stmt_nombre_sala) {
-        throw new Exception("Error al preparar la consulta: " . mysqli_error($conexion));
+    if ($row = $stmt_nombre_sala->fetch(PDO::FETCH_ASSOC)) {
+        $nombre_sala = htmlspecialchars($row['nombre_sala']);
     }
-
-    mysqli_stmt_bind_param($stmt_nombre_sala, "i", $id_sala);
-    mysqli_stmt_execute($stmt_nombre_sala);
-    mysqli_stmt_bind_result($stmt_nombre_sala, $nombre_sala);
-
-    if (!mysqli_stmt_fetch($stmt_nombre_sala)) {
-        throw new Exception("No se encontró ninguna sala con el ID especificado.");
-    }
-    mysqli_stmt_close($stmt_nombre_sala);
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
 }
@@ -54,7 +49,7 @@ try {
             <div class="navbar-left">
                 <a href="./menu.php"><img src="./img/logo.png" alt="Logo de la Marca" class="logo" style="width: 100%;"></a>
                 <a href="./registro.php"><img src="./img/lbook.png" alt="Ícono adicional" class="navbar-icon"></a>
-                <a href="./reservas.php"><img src="./img/food.png"  alt="Ícono adicional" class="navbar-icon"></a>
+                <a href="./reservas.php"><img src="./img/food.png" alt="Ícono adicional" class="navbar-icon"></a>
             </div>
 
             <!-- Título en el centro -->
@@ -74,25 +69,19 @@ try {
 
         <div class='mesas-container'>
             <?php
-
             // Inicia la salida de buffer para evitar errores de encabezados ya enviados
             ob_start();
-            mysqli_autocommit($conexion, false); // Desactivar autocommit
+            $conexion->beginTransaction(); // Desactivar autocommit
             try {
-                // Iniciar la transacción
-                mysqli_begin_transaction($conexion, MYSQLI_TRANS_START_READ_WRITE);
-
                 // Obtener el id_usuario desde la sesión
                 $usuario = $_SESSION['usuario'];
 
                 // Obtener id_usuario de la base de datos
-                $query_usuario = "SELECT id_usuario FROM tbl_usuarios WHERE nombre_user = ?";
-                $stmt_usuario = mysqli_prepare($conexion, $query_usuario);
-                mysqli_stmt_bind_param($stmt_usuario, "s", $usuario);
-                mysqli_stmt_execute($stmt_usuario);
-                mysqli_stmt_bind_result($stmt_usuario, $id_usuario);
-                mysqli_stmt_fetch($stmt_usuario);
-                mysqli_stmt_close($stmt_usuario);
+                $query_usuario = "SELECT id_usuario FROM tbl_usuarios WHERE nombre_user = :usuario";
+                $stmt_usuario = $conexion->prepare($query_usuario);
+                $stmt_usuario->bindParam(':usuario', $usuario, PDO::PARAM_STR);
+                $stmt_usuario->execute();
+                $id_usuario = $stmt_usuario->fetchColumn();
 
                 // Verificación de parámetros GET
                 if (isset($_GET['categoria']) && isset($_GET['id_sala'])) {
@@ -100,65 +89,66 @@ try {
                     $id_sala = $_GET['id_sala'];
 
                     // Consultar las salas de acuerdo a la categoría seleccionada
-                    $query_salas = "SELECT * FROM tbl_salas WHERE tipo_sala = ? AND id_sala = ?";
-                    $stmt_salas = mysqli_prepare($conexion, $query_salas);
-                    mysqli_stmt_bind_param($stmt_salas, "si", $categoria_seleccionada, $id_sala);
-                    mysqli_stmt_execute($stmt_salas);
-                    $result_salas = mysqli_stmt_get_result($stmt_salas);
+                    $query_salas = "SELECT * FROM tbl_salas WHERE tipo_sala = :categoria AND id_sala = :id_sala";
+                    $stmt_salas = $conexion->prepare($query_salas);
+                    $stmt_salas->bindParam(':categoria', $categoria_seleccionada, PDO::PARAM_STR);
+                    $stmt_salas->bindParam(':id_sala', $id_sala, PDO::PARAM_INT);
+                    $stmt_salas->execute();
+                    $result_salas = $stmt_salas->fetchAll(PDO::FETCH_ASSOC);
 
-                    if (mysqli_num_rows($result_salas) > 0) {
+                    if (count($result_salas) > 0) {
                         // Si la sala existe, obtener las mesas de esa sala
-                        $query_mesas = "SELECT * FROM tbl_mesas WHERE id_sala = ?";
-                        $stmt_mesas = mysqli_prepare($conexion, $query_mesas);
-                        mysqli_stmt_bind_param($stmt_mesas, "i", $id_sala);
-                        mysqli_stmt_execute($stmt_mesas);
-                        $result_mesas = mysqli_stmt_get_result($stmt_mesas);
-                        if (mysqli_num_rows($result_mesas) > 0) {
-                            while ($mesa = mysqli_fetch_assoc($result_mesas)) {
+                        $query_mesas = "SELECT * FROM tbl_mesas WHERE id_sala = :id_sala";
+                        $stmt_mesas = $conexion->prepare($query_mesas);
+                        $stmt_mesas->bindParam(':id_sala', $id_sala, PDO::PARAM_INT);
+                        $stmt_mesas->execute();
+                        $result_mesas = $stmt_mesas->fetchAll(PDO::FETCH_ASSOC);
+
+                        if (count($result_mesas) > 0) {
+                            foreach ($result_mesas as $mesa) {
                                 $estado_actual = htmlspecialchars($mesa['estado']);
                                 $estado_opuesto = $estado_actual === 'libre' ? 'Ocupar' : 'Liberar';
 
                                 // Verificar si la mesa está ocupada y quién la ocupa
                                 $mesa_id = $mesa['id_mesa'];
-                                $query_ocupacion = "SELECT id_usuario FROM tbl_ocupaciones WHERE id_mesa = ? AND fecha_fin IS NULL";
-                                $stmt_ocupacion = mysqli_prepare($conexion, $query_ocupacion);
-                                mysqli_stmt_bind_param($stmt_ocupacion, "i", $mesa_id);
-                                mysqli_stmt_execute($stmt_ocupacion);
-                                mysqli_stmt_bind_result($stmt_ocupacion, $id_usuario_ocupante);
-                                mysqli_stmt_fetch($stmt_ocupacion);
-                                mysqli_stmt_close($stmt_ocupacion);
+                                $query_ocupacion = "SELECT id_usuario FROM tbl_ocupaciones WHERE id_mesa = :mesa_id AND fecha_fin IS NULL";
+                                $stmt_ocupacion = $conexion->prepare($query_ocupacion);
+                                $stmt_ocupacion->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+                                $stmt_ocupacion->execute();
+                                $id_usuario_ocupante = $stmt_ocupacion->fetchColumn();
 
                                 // Si la mesa está ocupada por el usuario actual, mostrar el botón de liberación
                                 $desactivar_boton = ($estado_actual === 'ocupada' && $id_usuario !== $id_usuario_ocupante);
 
                                 echo "
-                    <div class='mesa-card'>
-                        <h3>Mesa: " . htmlspecialchars($mesa['numero_mesa']) . "</h3>
-                        <div class='mesa-image'>
-                            <img src='./img/mesas/Mesa_" . htmlspecialchars($mesa['numero_sillas']) . ".png' alt='as layout'>
-                        </div>
-                        <div class='mesa-info'>
-                            <p><strong>Sala:</strong> " . htmlspecialchars($categoria_seleccionada) . "</p>
-                            <p><strong>Estado:</strong> <span class='" . ($estado_actual == 'libre' ? 'estado-libre' : 'estado-ocupada') . "'>" . ucfirst($estado_actual) . "</span></p>
-                            <p><strong>Sillas:</strong> " . htmlspecialchars($mesa['numero_sillas']) . "</p>
-                        </div>
-                        <form method='POST' action='gestionar_mesas.php?categoria=$categoria_seleccionada&id_sala=$id_sala'>
-                            <input type='hidden' name='mesa_id' value='" . htmlspecialchars($mesa['id_mesa']) . "'>
-                            <input type='hidden' name='estado' value='" . $estado_actual . "'>
-                            <button type='submit' name='cambiar_estado' class='btn-estado " . ($estado_actual === 'libre' ? 'btn-libre' : 'btn-ocupada') . "' " . ($desactivar_boton ? 'disabled' : '') . ">" . ($estado_opuesto === 'Liberar' && $desactivar_boton ? 'No puedes liberar esta mesa' : $estado_opuesto) . "</button>
-                        </form>
-                    </div>";
+                                <div class='mesa-card'>
+                                    <h3>Mesa: " . htmlspecialchars($mesa['numero_mesa']) . "</h3>
+                                    <div class='mesa-image'>
+                                        <img src='./img/mesas/Mesa_" . htmlspecialchars($mesa['numero_sillas']) . ".png' alt='as layout'>
+                                    </div>
+                                    <div class='mesa-info'>
+                                        <p><strong>Sala:</strong> " . htmlspecialchars($categoria_seleccionada) . "</p>
+                                        <p><strong>Estado:</strong> <span class='" . ($estado_actual == 'libre' ? 'estado-libre' : 'estado-ocupada') . "'>" . ucfirst($estado_actual) . "</span></p>
+                                        <p><strong>Sillas:</strong> " . htmlspecialchars($mesa['numero_sillas']) . "</p>
+                                    </div>
+                                    <form method='POST' action='gestionar_mesas.php?categoria=$categoria_seleccionada&id_sala=$id_sala'>
+                                        <input type='hidden' name='mesa_id' value='" . htmlspecialchars($mesa['id_mesa']) . "'>
+                                        <input type='hidden' name='estado' value='" . $estado_actual . "'>
+                                        <button type='submit' name='cambiar_estado' class='btn-estado " . ($estado_actual === 'libre' ? 'btn-libre' : 'btn-ocupada') . "' " . ($desactivar_boton ? 'disabled' : '') . ">" . ($estado_opuesto === 'Liberar' && $desactivar_boton ? 'No puedes liberar esta mesa' : $estado_opuesto) . "</button>
+                                    </form>
+                                </div>
+                                ";
                             }
                         } else {
                             echo "<p>No hay mesas registradas en esta sala.</p>";
                         }
 
-                        mysqli_stmt_close($stmt_mesas);
+                        $stmt_mesas->closeCursor();
                     } else {
                         echo "<p>No se encontró la sala seleccionada o no corresponde a la categoría.</p>";
                     }
 
-                    mysqli_stmt_close($stmt_salas);
+                    $stmt_salas->closeCursor();
                 } else {
                     echo "<p>Faltan parámetros para la selección de sala o categoría.</p>";
                 }
@@ -170,26 +160,29 @@ try {
                     $fecha_hora = date("Y-m-d H:i:s");
 
                     // Actualizar estado de la mesa
-                    $query_update = "UPDATE tbl_mesas SET estado = ? WHERE id_mesa = ?";
-                    $stmt_update = mysqli_prepare($conexion, $query_update);
-                    mysqli_stmt_bind_param($stmt_update, "si", $estado_nuevo, $mesa_id);
-                    mysqli_stmt_execute($stmt_update);
-                    mysqli_stmt_close($stmt_update);
+                    $query_update = "UPDATE tbl_mesas SET estado = :estado WHERE id_mesa = :mesa_id";
+                    $stmt_update = $conexion->prepare($query_update);
+                    $stmt_update->bindParam(':estado', $estado_nuevo, PDO::PARAM_STR);
+                    $stmt_update->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+                    $stmt_update->execute();
 
                     // Si la mesa se ocupa, insertar la ocupación
                     if ($estado_nuevo == 'ocupada') {
-                        $query_insert = "INSERT INTO tbl_ocupaciones (id_usuario, id_mesa, fecha_inicio) VALUES (?, ?, ?)";
-                        $stmt_insert = mysqli_prepare($conexion, $query_insert);
-                        mysqli_stmt_bind_param($stmt_insert, "iis", $id_usuario, $mesa_id, $fecha_hora);
-                        mysqli_stmt_execute($stmt_insert);
-                        mysqli_stmt_close($stmt_insert);
+                        $query_insert = "INSERT INTO tbl_ocupaciones (id_usuario, id_mesa, fecha_inicio) VALUES (:id_usuario, :mesa_id, :fecha_hora)";
+                        $stmt_insert = $conexion->prepare($query_insert);
+                        $stmt_insert->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+                        $stmt_insert->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+                        $stmt_insert->bindParam(':fecha_hora', $fecha_hora, PDO::PARAM_STR);
+                        $stmt_insert->execute();
+                        $stmt_insert->closeCursor();
                     } else {
                         // Si la mesa se libera, actualizar la fecha de fin
-                        $query_end = "UPDATE tbl_ocupaciones SET fecha_fin = ? WHERE id_mesa = ? AND fecha_fin IS NULL";
-                        $stmt_end = mysqli_prepare($conexion, $query_end);
-                        mysqli_stmt_bind_param($stmt_end, "si", $fecha_hora, $mesa_id);
-                        mysqli_stmt_execute($stmt_end);
-                        mysqli_stmt_close($stmt_end);
+                        $query_end = "UPDATE tbl_ocupaciones SET fecha_fin = :fecha_fin WHERE id_mesa = :mesa_id AND fecha_fin IS NULL";
+                        $stmt_end = $conexion->prepare($query_end);
+                        $stmt_end->bindParam(':fecha_fin', $fecha_hora, PDO::PARAM_STR);
+                        $stmt_end->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+                        $stmt_end->execute();
+                        $stmt_end->closeCursor();
                     }
 
                     // Establecer una variable de sesión para indicar que se debe mostrar el SweetAlert
@@ -197,25 +190,28 @@ try {
                 }
 
                 // Confirmar la transacción
-                mysqli_commit($conexion);
+                $conexion->commit();
 
                 // Redirigir después de cambiar el estado
                 if (isset($_POST['cambiar_estado'])) {
                     header("Location: gestionar_mesas.php?categoria=$categoria_seleccionada&id_sala=$id_sala");
                     exit();
                 }
-                mysqli_close($conexion);
+                $conexion = null;
                 ob_end_flush();
             } catch (Exception $e) {
                 // Revertir la transacción en caso de error
-                mysqli_rollback($conexion);
+                $conexion->rollBack();
                 echo "Ocurrió un error al procesar la solicitud: " . $e->getMessage();
             }
             ?>
-
         </div>
         <script src="./js/sweetalert.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+        <!-- Bootstrap JS (debe estar al final del body) -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+    </div>
 </body>
 
 </html>

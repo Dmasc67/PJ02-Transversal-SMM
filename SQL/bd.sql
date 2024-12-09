@@ -6,14 +6,17 @@ USE bd_restaurante2;
 CREATE TABLE tbl_usuarios (
     id_usuario INT PRIMARY KEY AUTO_INCREMENT,
     nombre_user VARCHAR(100),
-    contrasena VARCHAR(100)
+    contrasena VARCHAR(100),
+    tipo_usuario ENUM('camarero', 'gerente', 'mantenimiento')  -- Tipo de usuario
 );
 
 -- Tabla de salas para diferenciar mesas
 CREATE TABLE tbl_salas (
     id_sala INT PRIMARY KEY AUTO_INCREMENT,
     nombre_sala VARCHAR(100),
-    tipo_sala VARCHAR(50)       -- Tipo de sala (Terraza, Comedor, Sala Privada...)
+    tipo_sala VARCHAR(50),       -- Tipo de sala (Terraza, Comedor, Sala Privada...)
+    capacidad INT,
+    imagen VARCHAR(255)
 );
 
 -- Tabla de mesas
@@ -34,28 +37,17 @@ CREATE TABLE tbl_ocupaciones (
     fecha_fin DATETIME                                  -- Fecha y hora del final de la ocupación
 );
 
-
--- Crear tabla para reservas anticipadas
+-- Tabla para las reservas de mesas
 CREATE TABLE tbl_reservas (
     id_reserva INT PRIMARY KEY AUTO_INCREMENT,
     id_usuario INT,
     id_mesa INT,
-    fecha_reserva DATETIME DEFAULT CURRENT_TIMESTAMP,  -- Fecha y hora de la reserva
-    fecha_ocupacion DATETIME,                           -- Fecha y hora de la ocupación
-    estado ENUM('pendiente', 'confirmada', 'cancelada') DEFAULT 'pendiente',  -- Estado de la reserva
-    FOREIGN KEY (id_usuario) REFERENCES tbl_usuarios(id_usuario),
-    FOREIGN KEY (id_mesa) REFERENCES tbl_mesas(id_mesa)
+    fecha_reserva DATETIME,  -- Fecha y hora de la reserva
+    fecha_inicio DATETIME,    -- Fecha y hora de inicio de la ocupación
+    fecha_fin DATETIME,       -- Fecha y hora de finalización de la ocupación
+    CONSTRAINT fk_reservas_usuarios FOREIGN KEY (id_usuario) REFERENCES tbl_usuarios(id_usuario),
+    CONSTRAINT fk_reservas_mesas FOREIGN KEY (id_mesa) REFERENCES tbl_mesas(id_mesa)
 );
-
--- Agregar campo de capacidad en la tabla de salas
-ALTER TABLE tbl_salas
-ADD capacidad INT;  -- Capacidad de la sala
-
--- Agregar campo de estado en la tabla de mesas para indicar si está reservada
-ALTER TABLE tbl_mesas
-ADD estado_reserva ENUM('disponible', 'reservada') DEFAULT 'disponible';  -- Estado de reserva de la mesa
-
--- ... código existente ...
 
 -- Definición de las FOREIGN KEYs
 ALTER TABLE tbl_mesas
@@ -64,9 +56,6 @@ ADD CONSTRAINT fk_mesas_salas FOREIGN KEY (id_sala) REFERENCES tbl_salas(id_sala
 ALTER TABLE tbl_ocupaciones
 ADD CONSTRAINT fk_ocupaciones_usuarios FOREIGN KEY (id_usuario) REFERENCES tbl_usuarios(id_usuario),
 ADD CONSTRAINT fk_ocupaciones_mesas FOREIGN KEY (id_mesa) REFERENCES tbl_mesas(id_mesa);
-
-
-
 
 -- Insertar usuarios (camareros)
 INSERT INTO tbl_usuarios (id_usuario, nombre_user, contrasena) VALUES

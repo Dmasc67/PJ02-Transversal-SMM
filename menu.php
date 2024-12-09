@@ -7,22 +7,23 @@ if (!isset($_SESSION['usuario'])) {
     header("Location: index.php?error=sesion_no_iniciada");
     exit();
 }
+
 // Verificar si el SweetAlert ya se mostró
 if (!isset($_SESSION['sweetalert_mostrado'])) {
     $_SESSION['sweetalert_mostrado'] = false;
 }
 try {
     $usuario = $_SESSION['usuario'];
-    $query_usuario = "SELECT id_usuario FROM tbl_usuarios WHERE nombre_user = ?";
-    $stmt_usuario = mysqli_prepare($conexion, $query_usuario);
-    mysqli_stmt_bind_param($stmt_usuario, "s", $usuario);
-    mysqli_stmt_execute($stmt_usuario);
-    mysqli_stmt_bind_result($stmt_usuario, $id_usuario);
-    mysqli_stmt_fetch($stmt_usuario);
+    $sql = "SELECT id_usuario FROM tbl_usuarios WHERE nombre_user = :usuario";
+    $stmt_usuario = $conexion->prepare($sql);
+    $stmt_usuario->bindParam(':usuario', $usuario);
+    $stmt_usuario->execute();
+    $stmt_usuario->bindColumn(1, $id_usuario);
+    $stmt_usuario->fetch(PDO::FETCH_BOUND);
     $_SESSION['id_usuario'] = $id_usuario;
-    mysqli_stmt_close($stmt_usuario);
-} catch (mysqli_sql_exception $e) {
-    die("Error en la base de datos: " . $e->getMessage());
+    $stmt_usuario = null;
+} catch (PDOException $e) {
+    die("Error en la base de datos: " . htmlspecialchars($e->getMessage()));
 }
 ?>
 <!DOCTYPE html>

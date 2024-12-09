@@ -67,8 +67,9 @@ if (!isset($_SESSION['usuario'])) {
                             <option value="">Todos</option>
                             <?php
                             $query_usuarios = "SELECT id_usuario, nombre_user FROM tbl_usuarios";
-                            $result_usuarios = mysqli_query($conexion, $query_usuarios);
-                            while ($usuario = mysqli_fetch_assoc($result_usuarios)) {
+                            $stmt_usuarios = $conexion->prepare($query_usuarios);
+                            $stmt_usuarios->execute();
+                            while ($usuario = $stmt_usuarios->fetch(PDO::FETCH_ASSOC)) {
                                 $selected = isset($_GET['usuario']) && $_GET['usuario'] == $usuario['id_usuario'] ? 'selected' : '';
                                 echo "<option value='{$usuario['id_usuario']}' $selected>{$usuario['nombre_user']}</option>";
                             }
@@ -82,8 +83,9 @@ if (!isset($_SESSION['usuario'])) {
                             <option value="">Todas</option>
                             <?php
                             $query_salas = "SELECT id_sala, nombre_sala FROM tbl_salas";
-                            $result_salas = mysqli_query($conexion, $query_salas);
-                            while ($sala = mysqli_fetch_assoc($result_salas)) {
+                            $stmt_salas = $conexion->prepare($query_salas);
+                            $stmt_salas->execute();
+                            while ($sala = $stmt_salas->fetch(PDO::FETCH_ASSOC)) {
                                 $selected = isset($_GET['sala']) && $_GET['sala'] == $sala['id_sala'] ? 'selected' : '';
                                 echo "<option value='{$sala['id_sala']}' $selected>{$sala['nombre_sala']}</option>";
                             }
@@ -97,8 +99,9 @@ if (!isset($_SESSION['usuario'])) {
                             <option value="">Todas</option>
                             <?php
                             $query_mesas = "SELECT id_mesa, numero_mesa FROM tbl_mesas";
-                            $result_mesas = mysqli_query($conexion, $query_mesas);
-                            while ($mesa = mysqli_fetch_assoc($result_mesas)) {
+                            $stmt_mesas = $conexion->prepare($query_mesas);
+                            $stmt_mesas->execute();
+                            while ($mesa = $stmt_mesas->fetch(PDO::FETCH_ASSOC)) {
                                 $selected = isset($_GET['mesa']) && $_GET['mesa'] == $mesa['id_mesa'] ? 'selected' : '';
                                 echo "<option value='{$mesa['id_mesa']}' $selected>{$mesa['numero_mesa']}</option>";
                             }
@@ -145,23 +148,39 @@ if (!isset($_SESSION['usuario'])) {
 
         $filters = [];
         if ($usuario_filter) {
-            $filters[] = "u.id_usuario = '" . mysqli_real_escape_string($conexion, $usuario_filter) . "'";
+            $filters[] = "u.id_usuario = :usuario";
         }
         if ($sala_filter) {
-            $filters[] = "s.id_sala = '" . mysqli_real_escape_string($conexion, $sala_filter) . "'";
+            $filters[] = "s.id_sala = :sala";
         }
         if ($mesa_filter) {
-            $filters[] = "m.id_mesa = '" . mysqli_real_escape_string($conexion, $mesa_filter) . "'";
+            $filters[] = "m.id_mesa = :mesa";
         }
         if ($estado_filter) {
-            $filters[] = "m.estado = '" . mysqli_real_escape_string($conexion, $estado_filter) . "'";
+            $filters[] = "m.estado = :estado";
         }
 
         if (!empty($filters)) {
             $query_historial .= " WHERE " . implode(" AND ", $filters);
         }
 
-        $result_historial = mysqli_query($conexion, $query_historial);
+        $stmt_historial = $conexion->prepare($query_historial);
+
+        // Vincular parámetros
+        if ($usuario_filter) {
+            $stmt_historial->bindParam(':usuario', $usuario_filter);
+        }
+        if ($sala_filter) {
+            $stmt_historial->bindParam(':sala', $sala_filter);
+        }
+        if ($mesa_filter) {
+            $stmt_historial->bindParam(':mesa', $mesa_filter);
+        }
+        if ($estado_filter) {
+            $stmt_historial->bindParam(':estado', $estado_filter);
+        }
+
+        $stmt_historial->execute();
         ?>
 
         <!-- Mostrar resultados en tabla -->
@@ -180,7 +199,7 @@ if (!isset($_SESSION['usuario'])) {
                 </thead>
                 <tbody>
                     <?php
-                    while ($ocupacion = mysqli_fetch_assoc($result_historial)) {
+                    while ($ocupacion = $stmt_historial->fetch(PDO::FETCH_ASSOC)) {
                         echo "<tr>
                         <td>{$ocupacion['nombre_user']}</td>
                         <td>{$ocupacion['nombre_sala']}</td>
@@ -189,7 +208,7 @@ if (!isset($_SESSION['usuario'])) {
                         <td>{$ocupacion['fecha_inicio']}</td>
                         <td>{$ocupacion['fecha_fin']}</td>
                         <td>{$ocupacion['duracion']}</td>
-                    </tr>";
+                        </tr>";
                     }
                     ?>
                 </tbody>
