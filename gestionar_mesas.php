@@ -8,7 +8,14 @@ if (!isset($_SESSION['usuario'])) {
     header("Location: index.php?error=sesion_no_iniciada");
     exit();
 }
+
+// Limpiar la variable de sesión para el SweetAlert al cargar la página
+if (isset($_SESSION['mesa_sweetalert'])) {
+    unset($_SESSION['mesa_sweetalert']);
+}
+
 $id_sala = isset($_GET['id_sala']) ? $_GET['id_sala'] : 0;
+$categoria_seleccionada = isset($_GET['categoria']) ? $_GET['categoria'] : null;
 
 try {
     if ($id_sala === 0) {
@@ -28,6 +35,57 @@ try {
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
 }
+
+// Manejar la reserva
+if (isset($_POST['reservar'])) {
+    $mesa_id = $_POST['mesa_id'];
+    $usuario_id = $_POST['usuario_id'];
+    $fecha_reserva = $_POST['fecha_reserva'];
+    $fecha_inicio = date("Y-m-d H:i:s", strtotime($fecha_reserva));
+    $fecha_fin = date("Y-m-d H:i:s", strtotime($fecha_reserva . ' + 2 hours')); // Ejemplo: reserva de 2 horas
+
+    // Verificar si ya hay una reserva en ese rango de tiempo
+    $query_conflicto = "SELECT COUNT(*) FROM tbl_reservas WHERE id_mesa = :mesa_id AND (
+        (fecha_inicio < :fecha_fin AND fecha_fin > :fecha_inicio)
+    )";
+    $stmt_conflicto = $conexion->prepare($query_conflicto);
+    $stmt_conflicto->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+    $stmt_conflicto->bindParam(':fecha_inicio', $fecha_inicio, PDO::PARAM_STR);
+    $stmt_conflicto->bindParam(':fecha_fin', $fecha_fin, PDO::PARAM_STR);
+    $stmt_conflicto->execute();
+    $conflicto = $stmt_conflicto->fetchColumn();
+
+    if ($conflicto > 0) {
+        echo "<p>Error: La mesa ya está ocupada en ese horario. Por favor, elige otro horario.</p>";
+    } else {
+        // Insertar la reserva en la base de datos
+        $query_reserva = "INSERT INTO tbl_reservas (id_usuario, id_mesa, fecha_reserva, fecha_inicio, fecha_fin) VALUES (:usuario_id, :mesa_id, NOW(), :fecha_inicio, :fecha_fin)";
+        $stmt_reserva = $conexion->prepare($query_reserva);
+        $stmt_reserva->bindParam(':usuario_id', $usuario_id, PDO::PARAM_INT);
+        $stmt_reserva->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+        $stmt_reserva->bindParam(':fecha_inicio', $fecha_inicio, PDO::PARAM_STR);
+        $stmt_reserva->bindParam(':fecha_fin', $fecha_fin, PDO::PARAM_STR);
+        
+        if ($stmt_reserva->execute()) {
+            // Establecer una variable de sesión para indicar que se debe mostrar el SweetAlert
+            $_SESSION['mesa_sweetalert'] = true;
+
+            // Redirigir a la página de reservas
+            header("Location: reservas.php");
+            exit();
+        } else {
+            echo "<p>Error al realizar la reserva. Inténtalo de nuevo.</p>";
+        }
+    }
+}
+
+// Verificar si se han pasado los parámetros necesarios
+if ($id_sala === 0 || $categoria_seleccionada === null) {
+    echo "<p>Faltan parámetros para la selección de sala o categoría.</p>";
+    exit();
+}
+
+// ... resto del código para mostrar las mesas ...
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -135,6 +193,13 @@ try {
                                         <input type='hidden' name='mesa_id' value='" . htmlspecialchars($mesa['id_mesa']) . "'>
                                         <input type='hidden' name='estado' value='" . $estado_actual . "'>
                                         <button type='submit' name='cambiar_estado' class='btn-estado " . ($estado_actual === 'libre' ? 'btn-libre' : 'btn-ocupada') . "' " . ($desactivar_boton ? 'disabled' : '') . ">" . ($estado_opuesto === 'Liberar' && $desactivar_boton ? 'No puedes liberar esta mesa' : $estado_opuesto) . "</button>
+                                    </form>
+                                    <form method='POST' action='gestionar_mesas.php' class='reserva-form'>
+                                        <input type='hidden' name='mesa_id' value='" . htmlspecialchars($mesa['id_mesa']) . "'>
+                                        <input type='hidden' name='usuario_id' value='" . htmlspecialchars($id_usuario) . "'>
+                                        <label for='fecha_reserva'>Fecha Reserva:</label>
+                                        <input type='datetime-local' name='fecha_reserva' required>
+                                        <button type='submit' name='reservar' class='btn btn-primary'>Reservar</button>
                                     </form>
                                 </div>
                                 ";
