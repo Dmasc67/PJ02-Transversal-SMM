@@ -40,6 +40,7 @@ CREATE TABLE tbl_ocupaciones (
 -- Tabla para las reservas de mesas
 CREATE TABLE tbl_reservas (
     id_reserva INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_reserva VARCHAR(50),
     id_usuario INT,
     id_mesa INT,
     fecha_reserva DATETIME,  -- Fecha y hora de la reserva

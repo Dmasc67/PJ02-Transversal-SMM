@@ -40,6 +40,7 @@ try {
 if (isset($_POST['reservar'])) {
     $mesa_id = $_POST['mesa_id'];
     $usuario_id = $_POST['usuario_id'];
+    $nombre_reserva = $_POST['nombre_reserva'];
     $fecha_reserva = $_POST['fecha_reserva'];
     $fecha_inicio = date("Y-m-d H:i:s", strtotime($fecha_reserva));
     $fecha_fin = date("Y-m-d H:i:s", strtotime($fecha_reserva . ' + 2 hours')); // Ejemplo: reserva de 2 horas
@@ -59,8 +60,9 @@ if (isset($_POST['reservar'])) {
         echo "<p>Error: La mesa ya está ocupada en ese horario. Por favor, elige otro horario.</p>";
     } else {
         // Insertar la reserva en la base de datos
-        $query_reserva = "INSERT INTO tbl_reservas (id_usuario, id_mesa, fecha_reserva, fecha_inicio, fecha_fin) VALUES (:usuario_id, :mesa_id, NOW(), :fecha_inicio, :fecha_fin)";
+        $query_reserva = "INSERT INTO tbl_reservas (nombre_reserva, id_usuario, id_mesa, fecha_reserva, fecha_inicio, fecha_fin) VALUES (:nombre_reserva, :usuario_id, :mesa_id, NOW(), :fecha_inicio, :fecha_fin)";
         $stmt_reserva = $conexion->prepare($query_reserva);
+        $stmt_reserva->bindParam(':nombre_reserva', $nombre_reserva, PDO::PARAM_STR);
         $stmt_reserva->bindParam(':usuario_id', $usuario_id, PDO::PARAM_INT);
         $stmt_reserva->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
         $stmt_reserva->bindParam(':fecha_inicio', $fecha_inicio, PDO::PARAM_STR);
@@ -197,6 +199,8 @@ if ($id_sala === 0 || $categoria_seleccionada === null) {
                                     <form method='POST' action='gestionar_mesas.php' class='reserva-form'>
                                         <input type='hidden' name='mesa_id' value='" . htmlspecialchars($mesa['id_mesa']) . "'>
                                         <input type='hidden' name='usuario_id' value='" . htmlspecialchars($id_usuario) . "'>
+                                        <label for='nombre_reserva'>Nombre Reserva:</label>
+                                        <input type='text' name='nombre_reserva' required>
                                         <label for='fecha_reserva'>Fecha Reserva:</label>
                                         <input type='datetime-local' name='fecha_reserva' required>
                                         <button type='submit' name='reservar' class='btn btn-primary'>Reservar</button>

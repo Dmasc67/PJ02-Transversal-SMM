@@ -52,7 +52,7 @@ if (!isset($_SESSION['usuario'])) {
 
         <!-- Consulta SQL para obtener el historial de reservas -->
         <?php
-        $query_reservas = "SELECT u.nombre_user, s.nombre_sala, m.numero_mesa, r.fecha_reserva, r.fecha_inicio, r.fecha_fin
+        $query_reservas = "SELECT u.nombre_user, s.nombre_sala, m.numero_mesa, r.nombre_reserva, r.fecha_reserva, r.fecha_inicio, r.fecha_fin
                            FROM tbl_reservas r
                            JOIN tbl_mesas m ON r.id_mesa = m.id_mesa
                            JOIN tbl_salas s ON m.id_sala = s.id_sala
@@ -67,7 +67,8 @@ if (!isset($_SESSION['usuario'])) {
             <table class="table table-striped">
                 <thead class="thead-dark">
                     <tr>
-                        <th>Usuario</th>
+                        <th>Nombre Reserva</th>
+                        <th>Camarero</th>
                         <th>Sala</th>
                         <th>Número de Mesa</th>
                         <th>Fecha Reserva</th>
@@ -79,6 +80,7 @@ if (!isset($_SESSION['usuario'])) {
                     <?php
                     while ($reserva = $stmt_reservas->fetch(PDO::FETCH_ASSOC)) {
                         echo "<tr>
+                        <td>{$reserva['nombre_reserva']}</td>
                         <td>{$reserva['nombre_user']}</td>
                         <td>{$reserva['nombre_sala']}</td>
                         <td>{$reserva['numero_mesa']}</td>
