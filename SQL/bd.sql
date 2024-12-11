@@ -46,6 +46,7 @@ CREATE TABLE tbl_reservas (
     fecha_reserva DATETIME,  -- Fecha y hora de la reserva
     fecha_inicio DATETIME,    -- Fecha y hora de inicio de la ocupación
     fecha_fin DATETIME,       -- Fecha y hora de finalización de la ocupación
+    estado ENUM('Pendiente', 'Satisfactoria', 'Cancelada') DEFAULT 'Pendiente',
     CONSTRAINT fk_reservas_usuarios FOREIGN KEY (id_usuario) REFERENCES tbl_usuarios(id_usuario),
     CONSTRAINT fk_reservas_mesas FOREIGN KEY (id_mesa) REFERENCES tbl_mesas(id_mesa)
 );
@@ -110,7 +111,7 @@ INSERT INTO tbl_mesas (id_mesa, numero_mesa, id_sala,  numero_sillas, estado) VA
     (23, 505, 5, 4, 'libre'),
     (24, 506, 5, 4, 'libre');
 
-    -- Insertar mesas en las salas privadas (1 mesa por sala)
+-- Insertar mesas en las salas privadas (1 mesa por sala)
 INSERT INTO tbl_mesas (id_mesa, numero_mesa, id_sala,  numero_sillas, estado) VALUES
     (25, 601, 6, 12, 'libre'),
     (26, 701, 7, 12, 'libre'),
@@ -122,3 +123,12 @@ INSERT INTO tbl_ocupaciones (id_ocupacion, id_usuario, id_mesa, fecha_inicio, fe
     (1, 1, 1, '2024-11-15 12:30:00', '2024-11-15 14:30:00'),
     (2, 2, 3, '2024-11-15 18:00:00', '2024-11-15 19:30:00'),
     (3, 3, 5, '2024-11-15 20:00:00', '2024-11-15 22:00:00');
+
+-- Modificar la tabla tbl_reservas para añadir la columna estado
+ALTER TABLE tbl_reservas
+ADD COLUMN estado ENUM('Pendiente', 'Satisfactoria', 'Cancelada') DEFAULT 'Pendiente';
+
+-- Actualizar el estado de las reservas a Satisfactoria
+UPDATE tbl_reservas
+SET estado = 'Satisfactoria'
+WHERE fecha_fin < NOW() AND estado = 'Pendiente';

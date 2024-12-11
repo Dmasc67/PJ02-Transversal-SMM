@@ -32,6 +32,7 @@ if (!isset($_SESSION['usuario'])) {
             <div class="navbar-left">
                 <a href="./menu.php"><img src="./img/logo.png" alt="Logo de la Marca" class="logo" style="width: 100%;"></a>
                 <a href="./registro.php"><img src="./img/lbook.png" alt="Ícono adicional" class="navbar-icon"></a>
+                <a href="./reservas.php"><img src="./img/food.png" alt="Ícono adicional" class="navbar-icon"></a>
             </div>
 
             <!-- Título en el centro -->
