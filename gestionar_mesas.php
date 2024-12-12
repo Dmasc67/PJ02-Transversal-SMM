@@ -42,6 +42,27 @@ if (isset($_POST['reservar'])) {
     $usuario_id = $_POST['usuario_id'];
     $nombre_reserva = $_POST['nombre_reserva'];
     $fecha_reserva = $_POST['fecha_reserva'];
+
+    // Validar que la hora de reserva esté dentro del rango permitido
+    $hora_reserva = date("H", strtotime($fecha_reserva));
+    if ($hora_reserva < 9 || $hora_reserva > 22) {
+        echo "<script>
+                Swal.fire({
+                    icon: 'error',
+                    title: '¡Ups!',
+                    text: 'La hora de reserva debe estar entre las 9 AM y las 10 PM.',
+                    background: '#f8d7da',
+                    color: '#721c24',
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: '¡Entendido!',
+                    footer: '<a href=\"#\">¿Por qué no puedo reservar en este horario?</a>'
+                }).then(() => {
+                    window.history.back();
+                });
+              </script>";
+        exit();
+    }
+
     $fecha_inicio = date("Y-m-d H:i:s", strtotime($fecha_reserva));
     $fecha_fin = date("Y-m-d H:i:s", strtotime($fecha_reserva . ' + 2 hours')); // Ejemplo: reserva de 2 horas
 

@@ -83,10 +83,18 @@ if (!isset($_SESSION['usuario'])) {
                         $sillas_libres = $stmt_sillas_libres->fetchColumn();
 
                         // Mostrar la información
-                        echo "<a class='image-container' href='./gestionar_mesas.php?categoria=" . urlencode($categoria_seleccionada) . "&id_sala=" . $id_sala . "'>
-                    <img src='./img/" . htmlspecialchars($sala['nombre_sala']) . ".jpg' alt='' id='terraza'>
-                    <div class='text-overlay'>" . htmlspecialchars($sala['nombre_sala']) . "<br>Sillas libres: " . ($sillas_libres ?? 0) . "/" . ($total_sillas ?? 0)  . "</div>
-                </a>";
+                        echo "<a class='image-container' href='./gestionar_mesas.php?categoria=" . urlencode($categoria_seleccionada) . "&id_sala=" . $id_sala . "'>";
+
+                        // Verificar si existe una imagen
+                        if (!empty($sala['imagen'])) {
+                            echo "<img src='" . htmlspecialchars($sala['imagen']) . "' alt='" . htmlspecialchars($sala['nombre_sala']) . "' id='terraza'>";
+                        } else {
+                            // Si no hay imagen, usar una imagen por defecto
+                            echo "<img src='./img/" . htmlspecialchars($sala['nombre_sala']) . ".jpg' alt='" . htmlspecialchars($sala['nombre_sala']) . "' id='terraza'>";
+                        }
+
+                        echo "<div class='text-overlay'>" . htmlspecialchars($sala['nombre_sala']) . "<br>Sillas libres: " . ($sillas_libres ?? 0) . "/" . ($total_sillas ?? 0)  . "</div>
+                    </a>";
                     }
                 } else {
                     echo "<p>No hay salas disponibles para esta categoría.</p>";

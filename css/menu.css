@@ -359,3 +359,7 @@ section img:hover {
 .reserva-form button:hover {
     background-color: #0056b3; /* Color de fondo al pasar el mouse */
 }
+
+#h4-cheto{
+    color: white;
+}

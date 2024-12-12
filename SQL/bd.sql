@@ -7,7 +7,7 @@ CREATE TABLE tbl_usuarios (
     id_usuario INT PRIMARY KEY AUTO_INCREMENT,
     nombre_user VARCHAR(100),
     contrasena VARCHAR(100),
-    tipo_usuario ENUM('camarero', 'gerente', 'mantenimiento')  -- Tipo de usuario
+    tipo_usuario ENUM('camarero', 'gerente', 'mantenimiento', 'administrador')  -- Tipo de usuario actualizado
 );
 
 -- Tabla de salas para diferenciar mesas
@@ -60,10 +60,10 @@ ADD CONSTRAINT fk_ocupaciones_usuarios FOREIGN KEY (id_usuario) REFERENCES tbl_u
 ADD CONSTRAINT fk_ocupaciones_mesas FOREIGN KEY (id_mesa) REFERENCES tbl_mesas(id_mesa);
 
 -- Insertar usuarios (camareros)
-INSERT INTO tbl_usuarios (id_usuario, nombre_user, contrasena) VALUES
-    (1, 'Jorge', '$2y$10$wORRwXyRsJRc9ua8okkNuO6m/GbqBuZouNb4LZbwFPDG6HwNUhOVa'),   -- asdASD123
-    (2, 'Olga', '$2y$10$wORRwXyRsJRc9ua8okkNuO6m/GbqBuZouNb4LZbwFPDG6HwNUhOVa'),    -- asdASD123
-    (3, 'Miguel', '$2y$10$wORRwXyRsJRc9ua8okkNuO6m/GbqBuZouNb4LZbwFPDG6HwNUhOVa');  -- asdASD123
+INSERT INTO tbl_usuarios (id_usuario, nombre_user, contrasena, tipo_usuario) VALUES
+    (1, 'Jorge', '$2y$10$wORRwXyRsJRc9ua8okkNuO6m/GbqBuZouNb4LZbwFPDG6HwNUhOVa', 'camarero'),   -- asdASD123
+    (2, 'Olga', '$2y$10$wORRwXyRsJRc9ua8okkNuO6m/GbqBuZouNb4LZbwFPDG6HwNUhOVa', 'camarero'),    -- asdASD123
+    (3, 'Miguel', '$2y$10$wORRwXyRsJRc9ua8okkNuO6m/GbqBuZouNb4LZbwFPDG6HwNUhOVa', 'gerente');  -- asdASD123
 
 -- Insertar salas
 INSERT INTO tbl_salas (id_sala, nombre_sala, tipo_sala, capacidad) VALUES
