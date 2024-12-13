@@ -178,19 +178,16 @@ if (isset($_POST['eliminar_mesa'])) {
 <body>
 <div class="container">
         <nav class="navegacion">
-            <!-- Sección izquierda con el logo grande y el ícono adicional más pequeño -->
             <div class="navbar-left">
                 <a href="./menu.php"><img src="./img/logo.png" alt="Logo de la Marca" class="logo" style="width: 100%;"></a>
                 <a href="./registro.php"><img src="./img/lbook.png" alt="Ícono adicional" class="navbar-icon"></a>
-                <a href="./reservas.php"><img src="./img/food.png"  alt="Ícono adicional" class="navbar-icon"></a>
+                <a href="./reservas.php"><img src="./img/food.png" alt="Ícono adicional" class="navbar-icon"></a>
             </div>
 
-            <!-- Título en el centro -->
             <div class="navbar-title">
                 <h3>Recursos</h3>
             </div>
 
-            <!-- Icono de logout a la derecha -->
             <div class="navbar-right">
                 <a href="./crud_usuarios.php"><img src="./img/users-alt.png" alt="Logout" class="navbar-icon"></a>
                 <a href="./crud_recursos.php"><img src="./img/dinner-table.png" alt="Logout" class="navbar-icon"></a>

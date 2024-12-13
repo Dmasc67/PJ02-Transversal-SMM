@@ -8,6 +8,18 @@ if (!isset($_SESSION['usuario'])) {
     exit();
 }
 
+// Mostrar pop-up si hay un error de mesa ocupada
+if (isset($_SESSION['error_mesa_ocupada'])) {
+    echo "<script>
+            window.onload = function() {
+                setTimeout(function() {
+                    alert('No se puede realizar la reserva porque la mesa ya está ocupada.');
+                }, 100); // Retraso de 100 ms antes de mostrar el pop-up
+            };
+          </script>";
+    unset($_SESSION['error_mesa_ocupada']); // Limpiar la variable de sesión
+}
+
 // Actualizar el estado de las reservas a Satisfactoria
 $update_query = "UPDATE tbl_reservas
                  SET estado = 'Satisfactoria'
@@ -241,7 +253,7 @@ $conexion->exec($update_query);
                             <form method='POST' action='cambiar_estado.php' style='display:inline;' class='delete-form'>
                                 <input type='hidden' name='id_reserva' value='{$reserva['id_reserva']}'>
                                 <button type='button' class='btn btn-warning btn-sm delete-button' 
-                                    " . ($reserva['estado'] === 'Cancelada' ? 'disabled' : '') . ">
+                                    " . ($reserva['estado'] === 'Cancelada' || $reserva['estado'] === 'Satisfactoria' ? 'disabled' : '') . ">
                                     Cancelar
                                 </button>
                             </form>

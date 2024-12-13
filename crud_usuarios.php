@@ -1,6 +1,13 @@
 <?php
 include './php/conexion.php';
 
+// Verificar el tipo de usuario
+session_start(); // Asegúrate de que la sesión esté iniciada
+if ($_SESSION['tipo_usuario'] === 'camarero') {
+    header("Location: acceso_denegado.php"); // Redirigir a una página de acceso denegado
+    exit();
+}
+
 // Crear usuario
 if (isset($_POST['crear'])) {
     $nombre_user = $_POST['nombre_user'];
@@ -142,7 +149,6 @@ if (isset($_POST['eliminar'])) {
                             <option value="camarero" <?php if($usuario['tipo_usuario'] == 'camarero') echo 'selected'; ?>>Camarero</option>
                             <option value="gerente" <?php if($usuario['tipo_usuario'] == 'gerente') echo 'selected'; ?>>Gerente</option>
                             <option value="mantenimiento" <?php if($usuario['tipo_usuario'] == 'mantenimiento') echo 'selected'; ?>>Mantenimiento</option>
-                            <option value="administrador" <?php if($usuario['tipo_usuario'] == 'administrador') echo 'selected'; ?>>Administrador</option>
                         </select>
                         <button type="submit" name="actualizar" class="btn btn-success mt-2">Actualizar Usuario</button>
                         <br>

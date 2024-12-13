@@ -12,6 +12,18 @@ if (!isset($_SESSION['usuario'])) {
 if (!isset($_SESSION['sweetalert_mostrado'])) {
     $_SESSION['sweetalert_mostrado'] = false;
 }
+
+// Mostrar pop-up si hay un error de hora de reserva
+if (isset($_SESSION['error_hora_reserva'])) {
+    echo "<script>
+            window.onload = function() {
+                setTimeout(function() {
+                    alert('La hora de reserva debe estar entre las 9 AM y las 10 PM.');
+                }, 100); // Retraso de 100 ms antes de mostrar el pop-up
+            };
+          </script>";
+    unset($_SESSION['error_hora_reserva']); // Limpiar la variable de sesión
+}
 try {
     $usuario = $_SESSION['usuario'];
     $sql = "SELECT id_usuario FROM tbl_usuarios WHERE nombre_user = :usuario";

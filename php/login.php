@@ -8,7 +8,7 @@ if (isset($_POST['btn_iniciar_sesion']) && !empty($_POST['Usuario']) && !empty($
     try {
         $conexion->beginTransaction(); // Asegúrate de que $conexion esté definido
 
-        $sql = "SELECT nombre_user, contrasena FROM tbl_usuarios WHERE nombre_user = :usuario";
+        $sql = "SELECT nombre_user, contrasena, tipo_usuario FROM tbl_usuarios WHERE nombre_user = :usuario";
         $stmt = $conexion->prepare($sql);
         $stmt->bindParam(':usuario', $usuario);
         $stmt->execute();
@@ -17,6 +17,7 @@ if (isset($_POST['btn_iniciar_sesion']) && !empty($_POST['Usuario']) && !empty($
         if ($resultado) {
             if (password_verify($contra, $resultado['contrasena'])) {
                 $_SESSION['Usuario'] = $usuario;
+                $_SESSION['tipo_usuario'] = $resultado['tipo_usuario'];
                 $conexion->commit();
                 header("Location: ../menu.php");    
                 exit();

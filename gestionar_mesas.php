@@ -46,20 +46,9 @@ if (isset($_POST['reservar'])) {
     // Validar que la hora de reserva esté dentro del rango permitido
     $hora_reserva = date("H", strtotime($fecha_reserva));
     if ($hora_reserva < 9 || $hora_reserva > 22) {
-        echo "<script>
-                Swal.fire({
-                    icon: 'error',
-                    title: '¡Ups!',
-                    text: 'La hora de reserva debe estar entre las 9 AM y las 10 PM.',
-                    background: '#f8d7da',
-                    color: '#721c24',
-                    confirmButtonColor: '#d33',
-                    confirmButtonText: '¡Entendido!',
-                    footer: '<a href=\"#\">¿Por qué no puedo reservar en este horario?</a>'
-                }).then(() => {
-                    window.history.back();
-                });
-              </script>";
+        // Establecer una variable de sesión para indicar que hubo un error de hora
+        $_SESSION['error_hora_reserva'] = true;
+        header("Location: menu.php"); // Redirigir a menu.php
         exit();
     }
 
@@ -78,7 +67,10 @@ if (isset($_POST['reservar'])) {
     $conflicto = $stmt_conflicto->fetchColumn();
 
     if ($conflicto > 0) {
-        echo "<p>Error: La mesa ya está ocupada en ese horario. Por favor, elige otro horario.</p>";
+        // Establecer una variable de sesión para indicar que hubo un conflicto
+        $_SESSION['error_mesa_ocupada'] = true;
+        header("Location: reservas.php"); // Redirigir a reservas.php
+        exit();
     } else {
         // Insertar la reserva en la base de datos
         $query_reserva = "INSERT INTO tbl_reservas (nombre_reserva, id_usuario, id_mesa, fecha_reserva, fecha_inicio, fecha_fin) VALUES (:nombre_reserva, :usuario_id, :mesa_id, NOW(), :fecha_inicio, :fecha_fin)";
@@ -120,11 +112,14 @@ if ($id_sala === 0 || $categoria_seleccionada === null) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="./js/auth.js"></script>
+    <script src="./js/swgsmss.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+    <script src="./js/swgsmss.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </head>
 
-<body data-usuario="<?php echo htmlspecialchars($_SESSION['Usuario'], ENT_QUOTES, 'UTF-8'); ?>" data-sweetalert="<?php echo $_SESSION['sweetalert_mostrado'] ? 'true' : 'false'; ?>" data-mesa-sweetalert="<?php echo isset($_SESSION['mesa_sweetalert']) && $_SESSION['mesa_sweetalert'] ? 'true' : 'false'; ?>">
+<body data-usuario="<?php echo htmlspecialchars($_SESSION['Usuario'], ENT_QUOTES, 'UTF-8'); ?>" data-sweetalert="<?php echo $_SESSION['sweetalert_mostrado'] ? 'true' : 'false'; ?>" data-error-mesa-ocupada="<?php echo isset($_SESSION['error_mesa_ocupada']) ? 'true' : 'false'; ?>">
     <div class="container">
         <nav class="navegacion">
             <!-- Sección izquierda con el logo grande y el ícono adicional más pequeño -->
@@ -326,8 +321,6 @@ if ($id_sala === 0 || $categoria_seleccionada === null) {
             }
             ?>
         </div>
-        <script src="./js/sweetalert.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
         <!-- Bootstrap JS (debe estar al final del body) -->
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
