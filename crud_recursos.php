@@ -50,9 +50,19 @@ if (isset($_POST['crear_mesa'])) {
     exit();
 }
 
-// Leer salas y mesas
-$salas = $conexion->query("SELECT * FROM tbl_salas")->fetchAll(PDO::FETCH_ASSOC);
-$mesas = $conexion->query("SELECT * FROM tbl_mesas")->fetchAll(PDO::FETCH_ASSOC);
+// Obtener salas desde la base de datos con la capacidad total de sillas
+$salas = $conexion->query("
+    SELECT s.id_sala, s.nombre_sala, s.tipo_sala, 
+           (SELECT SUM(m.numero_sillas) FROM tbl_mesas m WHERE m.id_sala = s.id_sala) AS capacidad
+    FROM tbl_salas s
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// Leer salas y mesas con el nombre de la sala
+$mesas = $conexion->query("
+    SELECT m.id_mesa, m.numero_mesa, m.id_sala, m.numero_sillas, m.estado, s.nombre_sala 
+    FROM tbl_mesas m
+    JOIN tbl_salas s ON m.id_sala = s.id_sala
+")->fetchAll(PDO::FETCH_ASSOC);
 
 // Obtener información de la sala para actualizar
 $sala_a_actualizar = null;
@@ -73,7 +83,13 @@ if (isset($_POST['actualizar_sala'])) {
     // Manejo de la imagen
     if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] == 0) {
         $imagen = $_FILES['imagen']['name'];
-        $ruta_imagen = 'ruta/donde/guardar/' . $imagen; // Cambia esta ruta según tu estructura de carpetas
+        $ruta_imagen = './img/salas/' . $imagen;
+        
+        // Crear el directorio si no existe
+        if (!file_exists('./img/salas/')) {
+            mkdir('./img/salas/', 0777, true);
+        }
+        
         move_uploaded_file($_FILES['imagen']['tmp_name'], $ruta_imagen);
     } else {
         // Si no se subió una nueva imagen, mantener la imagen existente
@@ -160,6 +176,29 @@ if (isset($_POST['eliminar_mesa'])) {
     <title>CRUD de Recursos</title>
 </head>
 <body>
+<div class="container">
+        <nav class="navegacion">
+            <!-- Sección izquierda con el logo grande y el ícono adicional más pequeño -->
+            <div class="navbar-left">
+                <a href="./menu.php"><img src="./img/logo.png" alt="Logo de la Marca" class="logo" style="width: 100%;"></a>
+                <a href="./registro.php"><img src="./img/lbook.png" alt="Ícono adicional" class="navbar-icon"></a>
+                <a href="./reservas.php"><img src="./img/food.png"  alt="Ícono adicional" class="navbar-icon"></a>
+            </div>
+
+            <!-- Título en el centro -->
+            <div class="navbar-title">
+                <h3>Recursos</h3>
+            </div>
+
+            <!-- Icono de logout a la derecha -->
+            <div class="navbar-right">
+                <a href="./crud_usuarios.php"><img src="./img/users-alt.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./crud_recursos.php"><img src="./img/dinner-table.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./menu.php"><img src="./img/atras.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./salir.php"><img src="./img/logout.png" alt="Logout" class="navbar-icon"></a>
+            </div>
+        </nav>
+    </div>
     <div class="container mt-5">
         <h2 class="text-center text-white">Gestión de Recursos</h2>
 
@@ -178,9 +217,6 @@ if (isset($_POST['eliminar_mesa'])) {
                 </select>
             </div>
             <div class="mb-3">
-                <input type="number" name="capacidad" class="form-control" placeholder="Capacidad" required>
-            </div>
-            <div class="mb-3">
                 <input type="file" name="imagen" class="form-control" accept="image/*" required>
             </div>
             <button type="submit" name="crear_sala" class="btn btn-primary">Crear Sala</button>
@@ -190,7 +226,7 @@ if (isset($_POST['eliminar_mesa'])) {
         <h3 class="text-white">Crear Mesa</h3>
         <form method="POST" class="mb-4" enctype="multipart/form-data">
             <div class="mb-3">
-                <input type="number" name="numero_mesa" class="form-control" placeholder="Número de mesa" required>
+                <input type="number" name="numero_mesa" class="form-control" placeholder="Número de mesa" required oninput="this.value = this.value.replace(/[^0-9]/g, '');">
             </div>
             <div class="mb-3">
                 <select name="id_sala" class="form-select" required>
@@ -201,11 +237,11 @@ if (isset($_POST['eliminar_mesa'])) {
                 </select>
             </div>
             <div class="mb-3">
-                <input type="number" name="numero_sillas" class="form-control" placeholder="Número de sillas" required>
+                <input type="number" name="numero_sillas" class="form-control" placeholder="Número de sillas" required oninput="this.value = this.value.replace(/[^0-9]/g, '');">
             </div>
             <button type="submit" name="crear_mesa" class="btn btn-primary">Crear Mesa</button>
         </form>
-
+        <br><br>
         <h3 class="text-white">Lista de Salas</h3>
         <div class="table-responsive mt-4">
             <table class="table table-striped">
@@ -224,7 +260,7 @@ if (isset($_POST['eliminar_mesa'])) {
                         <td><?php echo $sala['id_sala']; ?></td>
                         <td><?php echo $sala['nombre_sala']; ?></td>
                         <td><?php echo $sala['tipo_sala']; ?></td>
-                        <td><?php echo $sala['capacidad']; ?></td>
+                        <td><?php echo $sala['capacidad'] ?? 0; ?></td>
                         <td>
                             <form method="POST" class="form-eliminar-sala d-inline">
                                 <input type="hidden" name="id_sala" value="<?php echo $sala['id_sala']; ?>">
@@ -234,12 +270,26 @@ if (isset($_POST['eliminar_mesa'])) {
                         </td>
                     </tr>
                     <div id="update-sala-<?php echo $sala['id_sala']; ?>" style="display:none;">
-                        <form method="POST" class="mt-2">
+                        <form method="POST" class="mt-2" enctype="multipart/form-data">
                             <input type="hidden" name="id_sala" value="<?php echo $sala['id_sala']; ?>">
-                            <h4 id="h4-cheto">Actualizar Sala: <?php echo htmlspecialchars($sala['nombre_sala']); ?></h4>
+                            <h4 style="color: white;">Actualizar Sala: <?php echo htmlspecialchars($sala['nombre_sala']); ?></h4>
+                            
+                            <!-- Texto e inputs para actualizar -->
+                            <p style="color: white;">Nombre de la Sala:</p>
                             <input type="text" name="nombre_sala" class="form-control" value="<?php echo $sala['nombre_sala']; ?>" required>
-                            <input type="text" name="tipo_sala" class="form-control" value="<?php echo $sala['tipo_sala']; ?>" required>
-                            <input type="number" name="capacidad" class="form-control" value="<?php echo $sala['capacidad']; ?>" required>
+                            <br>
+                            <p style="color: white;">Tipo de Sala:</p>
+                            <select name="tipo_sala" class="form-select" required>
+                                <?php foreach ($tipos_sala as $tipo): ?>
+                                    <option value="<?php echo $tipo; ?>" <?php if($sala['tipo_sala'] == $tipo) echo 'selected'; ?>>
+                                        <?php echo $tipo; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <br>
+                            <p style="color: white;">Cambiar Imagen:</p>
+                            <input type="file" name="imagen" class="form-control" accept="image/*">
+                            
                             <button type="submit" name="actualizar_sala" class="btn btn-success mt-2">Actualizar Sala</button>
                         </form>
                     </div>
@@ -255,7 +305,7 @@ if (isset($_POST['eliminar_mesa'])) {
                     <tr>
                         <th>ID</th>
                         <th>Número de Mesa</th>
-                        <th>ID de Sala</th>
+                        <th>Sala</th>
                         <th>Número de Sillas</th>
                         <th>Estado</th>
                         <th>Acciones</th>
@@ -266,7 +316,7 @@ if (isset($_POST['eliminar_mesa'])) {
                     <tr>
                         <td><?php echo $mesa['id_mesa']; ?></td>
                         <td><?php echo $mesa['numero_mesa']; ?></td>
-                        <td><?php echo $mesa['id_sala']; ?></td>
+                        <td><?php echo $mesa['nombre_sala']; ?></td>
                         <td><?php echo $mesa['numero_sillas']; ?></td>
                         <td><?php echo $mesa['estado']; ?></td>
                         <td>
@@ -280,14 +330,32 @@ if (isset($_POST['eliminar_mesa'])) {
                     <div id="update-mesa-<?php echo $mesa['id_mesa']; ?>" style="display:none;">
                         <form method="POST" class="mt-2">
                             <input type="hidden" name="id_mesa" value="<?php echo $mesa['id_mesa']; ?>">
-                            <h4>Actualizar Mesa: <?php echo htmlspecialchars($mesa['numero_mesa']); ?></h4>
+                            <h4 style="color: white;">Actualizar Mesa: <?php echo htmlspecialchars($mesa['numero_mesa']); ?></h4>
+                            
+                            <!-- Texto e inputs para actualizar -->
+                            <p style="color: white;">Número de Mesa:</p>
                             <input type="number" name="numero_mesa" class="form-control" value="<?php echo $mesa['numero_mesa']; ?>" required>
+                            <br>
+                            <p style="color: white;">Número de Sillas:</p>
                             <input type="number" name="numero_sillas" class="form-control" value="<?php echo $mesa['numero_sillas']; ?>" required>
+                            <br>
+                            <p style="color: white;">Sala:</p>
+                            <select name="id_sala" class="form-select" required>
+                                <?php foreach ($salas as $sala): ?>
+                                    <option value="<?php echo $sala['id_sala']; ?>" <?php if($mesa['id_sala'] == $sala['id_sala']) echo 'selected'; ?>>
+                                        <?php echo $sala['nombre_sala']; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <br>
+                            <p style="color: white;">Estado:</p>
                             <select name="estado" class="form-select" required>
                                 <option value="libre" <?php if($mesa['estado'] == 'libre') echo 'selected'; ?>>Libre</option>
                                 <option value="ocupada" <?php if($mesa['estado'] == 'ocupada') echo 'selected'; ?>>Ocupada</option>
                             </select>
+                            <br>
                             <button type="submit" name="actualizar_mesa" class="btn btn-success mt-2">Actualizar Mesa</button>
+                            <br>
                         </form>
                     </div>
                     <?php endforeach; ?>

@@ -69,9 +69,17 @@ body {
     padding-right: 10%;
 }
 
-.navbar-right img {
+.navbar-right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar-icon {
     height: 30px;
+    width: auto;
     cursor: pointer;
+    margin-left: 10px;
 }
 
 section {

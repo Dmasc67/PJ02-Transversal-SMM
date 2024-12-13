@@ -58,6 +58,8 @@ try {
 
             <!-- Icono de logout a la derecha -->
             <div class="navbar-right">
+                <a href="./crud_usuarios.php"><img src="./img/users-alt.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./crud_recursos.php"><img src="./img/dinner-table.png" alt="Logout" class="navbar-icon"></a>
                 <a href="./salir.php"><img src="./img/logout.png" alt="Logout" class="navbar-icon"></a>
             </div>
         </nav>

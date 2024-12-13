@@ -119,6 +119,7 @@ if ($id_sala === 0 || $categoria_seleccionada === null) {
     <link rel="stylesheet" href="./css/menu.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="./js/auth.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </head>
@@ -137,13 +138,11 @@ if ($id_sala === 0 || $categoria_seleccionada === null) {
             <div class="navbar-title">
                 <h3><?php echo htmlspecialchars($nombre_sala); ?></h3>
             </div>
-
-            <div class="navbar-right" style="margin-right: 18px;">
-                <a href="./menu.php"><img src="./img/atras.png" alt="Logout" class="navbar-icon"></a>
-            </div>
-
             <!-- Icono de logout a la derecha -->
             <div class="navbar-right">
+                  <a href="./crud_usuarios.php"><img src="./img/users-alt.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./crud_recursos.php"><img src="./img/dinner-table.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./menu.php"><img src="./img/atras.png" alt="Logout" class="navbar-icon"></a>
                 <a href="./salir.php"><img src="./img/logout.png" alt="Logout" class="navbar-icon"></a>
             </div>
         </nav>
@@ -188,10 +187,23 @@ if ($id_sala === 0 || $categoria_seleccionada === null) {
                         if (count($result_mesas) > 0) {
                             foreach ($result_mesas as $mesa) {
                                 $estado_actual = htmlspecialchars($mesa['estado']);
+                                $mesa_id = $mesa['id_mesa'];
+
+                                // Verificar si hay una reserva activa para la mesa
+                                $query_reserva_activa = "SELECT COUNT(*) FROM tbl_reservas WHERE id_mesa = :mesa_id AND estado = 'Pendiente' AND NOW() BETWEEN fecha_inicio AND fecha_fin";
+                                $stmt_reserva_activa = $conexion->prepare($query_reserva_activa);
+                                $stmt_reserva_activa->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+                                $stmt_reserva_activa->execute();
+                                $reserva_activa = $stmt_reserva_activa->fetchColumn();
+
+                                // Si hay una reserva activa, marcar la mesa como ocupada
+                                if ($reserva_activa > 0) {
+                                    $estado_actual = 'ocupada';
+                                }
+
                                 $estado_opuesto = $estado_actual === 'libre' ? 'Ocupar' : 'Liberar';
 
                                 // Verificar si la mesa está ocupada y quién la ocupa
-                                $mesa_id = $mesa['id_mesa'];
                                 $query_ocupacion = "SELECT id_usuario FROM tbl_ocupaciones WHERE id_mesa = :mesa_id AND fecha_fin IS NULL";
                                 $stmt_ocupacion = $conexion->prepare($query_ocupacion);
                                 $stmt_ocupacion->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
@@ -215,13 +227,13 @@ if ($id_sala === 0 || $categoria_seleccionada === null) {
                                     <form method='POST' action='gestionar_mesas.php?categoria=$categoria_seleccionada&id_sala=$id_sala'>
                                         <input type='hidden' name='mesa_id' value='" . htmlspecialchars($mesa['id_mesa']) . "'>
                                         <input type='hidden' name='estado' value='" . $estado_actual . "'>
-                                        <button type='submit' name='cambiar_estado' class='btn-estado " . ($estado_actual === 'libre' ? 'btn-libre' : 'btn-ocupada') . "' " . ($desactivar_boton ? 'disabled' : '') . ">" . ($estado_opuesto === 'Liberar' && $desactivar_boton ? 'No puedes liberar esta mesa' : $estado_opuesto) . "</button>
+                                        <button type='submit' name='cambiar_estado' class='btn-estado " . ($estado_actual === 'libre' ? 'btn-libre' : 'btn-ocupada') . "' style='" . ($estado_actual === 'ocupada' ? 'background-color: red; color: white;' : '') . "' " . ($desactivar_boton ? 'disabled' : '') . ">" . ($estado_opuesto === 'Liberar' && $desactivar_boton ? 'No puedes liberar esta mesa' : $estado_opuesto) . "</button>
                                     </form>
                                     <form method='POST' action='gestionar_mesas.php' class='reserva-form'>
                                         <input type='hidden' name='mesa_id' value='" . htmlspecialchars($mesa['id_mesa']) . "'>
                                         <input type='hidden' name='usuario_id' value='" . htmlspecialchars($id_usuario) . "'>
                                         <label for='nombre_reserva'>Nombre Reserva:</label>
-                                        <input type='text' name='nombre_reserva' required>
+                                        <input type='text' name='nombre_reserva' required oninput=\"this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');\">
                                         <label for='fecha_reserva'>Fecha Reserva:</label>
                                         <input type='datetime-local' name='fecha_reserva' required>
                                         <button type='submit' name='reservar' class='btn btn-primary'>Reservar</button>
@@ -249,34 +261,52 @@ if ($id_sala === 0 || $categoria_seleccionada === null) {
                     $estado_nuevo = $_POST['estado'] == 'libre' ? 'ocupada' : 'libre';
                     $fecha_hora = date("Y-m-d H:i:s");
 
-                    // Actualizar estado de la mesa
-                    $query_update = "UPDATE tbl_mesas SET estado = :estado WHERE id_mesa = :mesa_id";
-                    $stmt_update = $conexion->prepare($query_update);
-                    $stmt_update->bindParam(':estado', $estado_nuevo, PDO::PARAM_STR);
-                    $stmt_update->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
-                    $stmt_update->execute();
+                    // Verificar si la mesa está reservada
+                    $query_reserva = "SELECT COUNT(*) FROM tbl_reservas WHERE id_mesa = :mesa_id AND estado = 'Pendiente'";
+                    $stmt_reserva = $conexion->prepare($query_reserva);
+                    $stmt_reserva->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+                    $stmt_reserva->execute();
+                    $mesa_reservada = $stmt_reserva->fetchColumn();
 
-                    // Si la mesa se ocupa, insertar la ocupación
-                    if ($estado_nuevo == 'ocupada') {
-                        $query_insert = "INSERT INTO tbl_ocupaciones (id_usuario, id_mesa, fecha_inicio) VALUES (:id_usuario, :mesa_id, :fecha_hora)";
-                        $stmt_insert = $conexion->prepare($query_insert);
-                        $stmt_insert->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
-                        $stmt_insert->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
-                        $stmt_insert->bindParam(':fecha_hora', $fecha_hora, PDO::PARAM_STR);
-                        $stmt_insert->execute();
-                        $stmt_insert->closeCursor();
+                    if ($mesa_reservada > 0) {
+                        echo "<script>
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: '¡Mesa Reservada!',
+                                    text: 'Esta mesa está reservada y no se puede cambiar su estado.',
+                                    confirmButtonText: 'Entendido'
+                                });
+                              </script>";
                     } else {
-                        // Si la mesa se libera, actualizar la fecha de fin
-                        $query_end = "UPDATE tbl_ocupaciones SET fecha_fin = :fecha_fin WHERE id_mesa = :mesa_id AND fecha_fin IS NULL";
-                        $stmt_end = $conexion->prepare($query_end);
-                        $stmt_end->bindParam(':fecha_fin', $fecha_hora, PDO::PARAM_STR);
-                        $stmt_end->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
-                        $stmt_end->execute();
-                        $stmt_end->closeCursor();
-                    }
+                        // Actualizar estado de la mesa
+                        $query_update = "UPDATE tbl_mesas SET estado = :estado WHERE id_mesa = :mesa_id";
+                        $stmt_update = $conexion->prepare($query_update);
+                        $stmt_update->bindParam(':estado', $estado_nuevo, PDO::PARAM_STR);
+                        $stmt_update->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+                        $stmt_update->execute();
 
-                    // Establecer una variable de sesión para indicar que se debe mostrar el SweetAlert
-                    $_SESSION['mesa_sweetalert'] = true;
+                        // Si la mesa se ocupa, insertar la ocupación
+                        if ($estado_nuevo == 'ocupada') {
+                            $query_insert = "INSERT INTO tbl_ocupaciones (id_usuario, id_mesa, fecha_inicio) VALUES (:id_usuario, :mesa_id, :fecha_hora)";
+                            $stmt_insert = $conexion->prepare($query_insert);
+                            $stmt_insert->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+                            $stmt_insert->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+                            $stmt_insert->bindParam(':fecha_hora', $fecha_hora, PDO::PARAM_STR);
+                            $stmt_insert->execute();
+                            $stmt_insert->closeCursor();
+                        } else {
+                            // Si la mesa se libera, actualizar la fecha de fin
+                            $query_end = "UPDATE tbl_ocupaciones SET fecha_fin = :fecha_fin WHERE id_mesa = :mesa_id AND fecha_fin IS NULL";
+                            $stmt_end = $conexion->prepare($query_end);
+                            $stmt_end->bindParam(':fecha_fin', $fecha_hora, PDO::PARAM_STR);
+                            $stmt_end->bindParam(':mesa_id', $mesa_id, PDO::PARAM_INT);
+                            $stmt_end->execute();
+                            $stmt_end->closeCursor();
+                        }
+
+                        // Establecer una variable de sesión para indicar que se debe mostrar el SweetAlert
+                        $_SESSION['mesa_sweetalert'] = true;
+                    }
                 }
 
                 // Confirmar la transacción

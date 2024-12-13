@@ -16,7 +16,6 @@ if (!isset($_SESSION['usuario'])) {
     <link rel="stylesheet" href="./css/menu.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </head>
 
@@ -35,11 +34,10 @@ if (!isset($_SESSION['usuario'])) {
                     } ?></h3>
             </div>
 
-            <div class="navbar-right" style="margin-right: 18px;">
-                <a href="./menu.php"><img src="./img/atras.png" alt="Logout" class="navbar-icon"></a>
-            </div>
-
             <div class="navbar-right">
+                 <a href="./crud_usuarios.php"><img src="./img/users-alt.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./crud_recursos.php"><img src="./img/dinner-table.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./menu.php"><img src="./img/atras.png" alt="Logout" class="navbar-icon"></a>
                 <a href="./salir.php"><img src="./img/logout.png" alt="Logout" class="navbar-icon"></a>
             </div>
         </nav>

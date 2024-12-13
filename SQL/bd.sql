@@ -7,7 +7,7 @@ CREATE TABLE tbl_usuarios (
     id_usuario INT PRIMARY KEY AUTO_INCREMENT,
     nombre_user VARCHAR(100),
     contrasena VARCHAR(100),
-    tipo_usuario ENUM('camarero', 'gerente', 'mantenimiento', 'administrador')  -- Tipo de usuario actualizado
+    tipo_usuario ENUM('camarero', 'gerente', 'mantenimiento')  -- Tipo de usuario actualizado, 'administrador' eliminado
 );
 
 -- Tabla de salas para diferenciar mesas

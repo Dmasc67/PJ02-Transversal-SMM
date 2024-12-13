@@ -26,6 +26,7 @@ $conexion->exec($update_query);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="./js/auth.js"></script>
     <title>Historial de Reservas</title>
 </head>
 
@@ -43,11 +44,10 @@ $conexion->exec($update_query);
                 <h3>Historial de Reservas</h3>
             </div>
 
-            <div class="navbar-right" style="margin-right: 18px;">
-                <a href="./menu.php"><img src="./img/atras.png" alt="Logout" class="navbar-icon"></a>
-            </div>
-
             <div class="navbar-right">
+                <a href="./crud_usuarios.php"><img src="./img/users-alt.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./crud_recursos.php"><img src="./img/dinner-table.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./menu.php"><img src="./img/atras.png" alt="Logout" class="navbar-icon"></a>
                 <a href="./salir.php"><img src="./img/logout.png" alt="Logout" class="navbar-icon"></a>
             </div>
         </nav>
@@ -63,7 +63,7 @@ $conexion->exec($update_query);
                 <!-- Filtro para nombre de reserva -->
                 <div class="me-3">
                     <label for="nombre_reserva" class="text-white">Nombre Reserva:</label>
-                    <input type="text" name="nombre_reserva" class="form-control form-control-sm" style="height: 40px; width: 200px;" value="<?php echo isset($_GET['nombre_reserva']) ? $_GET['nombre_reserva'] : ''; ?>" placeholder="Buscar...">
+                    <input type="text" name="nombre_reserva" class="form-control form-control-sm" style="height: 40px; width: 200px;" value="<?php echo isset($_GET['nombre_reserva']) ? htmlspecialchars($_GET['nombre_reserva'], ENT_QUOTES) : ''; ?>" placeholder="Buscar...">
                 </div>
 
                 <div class="me-3">

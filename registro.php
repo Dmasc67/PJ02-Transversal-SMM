@@ -40,12 +40,10 @@ if (!isset($_SESSION['usuario'])) {
                 <h3>Historial de ocupaciones</h3>
             </div>
 
-            <!-- Icono de logout a la derecha -->
-            <div class="navbar-right" style="margin-right: 18px;">
-                <a href="./menu.php"><img src="./img/atras.png" alt="Logout" class="navbar-icon"></a>
-            </div>
-
             <div class="navbar-right">
+                 <a href="./crud_usuarios.php"><img src="./img/users-alt.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./crud_recursos.php"><img src="./img/dinner-table.png" alt="Logout" class="navbar-icon"></a>
+                <a href="./menu.php"><img src="./img/atras.png" alt="Logout" class="navbar-icon"></a>
                 <a href="./salir.php"><img src="./img/logout.png" alt="Logout" class="navbar-icon"></a>
             </div>
         </nav>
